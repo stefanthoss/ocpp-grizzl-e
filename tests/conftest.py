@@ -1,4 +1,5 @@
 """Global fixtures for ocpp integration."""
+
 import asyncio
 from unittest.mock import patch
 
@@ -20,22 +21,28 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 @pytest.fixture(name="skip_notifications", autouse=True)
 def skip_notifications_fixture():
     """Skip notification calls."""
-    with patch("homeassistant.components.persistent_notification.async_create"), patch(
-        "homeassistant.components.persistent_notification.async_dismiss"
-    ), patch("custom_components.ocpp.api.ChargePoint.notify_ha"):
+    with (
+        patch("homeassistant.components.persistent_notification.async_create"),
+        patch("homeassistant.components.persistent_notification.async_dismiss"),
+        patch("custom_components.ocpp.chargepoint.ChargePoint.notify_ha"),
+    ):
         yield
 
 
 # This fixture, when used, will result in calls to websockets to be bypassed. To have the call
 # return a value, we would add the `return_value=<VALUE_TO_RETURN>` parameter to the patch call.
+# include patch for hass.states.get for use with migration to return cp_id
 @pytest.fixture(name="bypass_get_data")
 def bypass_get_data_fixture():
     """Skip calls to get data from API."""
     future = asyncio.Future()
-    future.set_result(websockets.WebSocketServer)
-    with patch("websockets.server.serve", return_value=future), patch(
-        "websockets.server.WebSocketServer.close"
-    ), patch("websockets.server.WebSocketServer.wait_closed"):
+    future.set_result(websockets.asyncio.server.Server)
+    with (
+        patch("websockets.asyncio.server.serve", return_value=future),
+        patch("websockets.asyncio.server.Server.close"),
+        patch("websockets.asyncio.server.Server.wait_closed"),
+        patch("homeassistant.core.StateMachine.get", return_value="test_cp_id"),
+    ):
         yield
 
 

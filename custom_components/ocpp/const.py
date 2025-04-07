@@ -1,6 +1,8 @@
 """Define constants for OCPP integration."""
+
 import pathlib
 
+from dataclasses import dataclass, field
 import homeassistant.components.input_number as input_number
 from homeassistant.components.sensor import SensorDeviceClass
 import homeassistant.const as ha
@@ -10,6 +12,7 @@ CONF_AUTH_LIST = "authorization_list"
 CONF_AUTH_STATUS = "authorization_status"
 CONF_CPI = "charge_point_identity"
 CONF_CPID = "cpid"
+CONF_CPIDS = "cpids"
 CONF_CSID = "csid"
 CONF_DEFAULT_AUTH_STATUS = "default_authorization_status"
 CONF_HOST = ha.CONF_HOST
@@ -20,6 +23,7 @@ CONF_MAX_CURRENT = "max_current"
 CONF_METER_INTERVAL = "meter_interval"
 CONF_MODE = ha.CONF_MODE
 CONF_MONITORED_VARIABLES = ha.CONF_MONITORED_VARIABLES
+CONF_MONITORED_VARIABLES_AUTOCONFIG = "monitored_variables_autoconfig"
 CONF_NAME = ha.CONF_NAME
 CONF_PASSWORD = ha.CONF_PASSWORD
 CONF_PORT = ha.CONF_PORT
@@ -47,7 +51,8 @@ DEFAULT_FORCE_SMART_CHARGING = False
 DEFAULT_SSL = False
 DEFAULT_SSL_CERTFILE_PATH = pathlib.Path.cwd().joinpath("fullchain.pem")
 DEFAULT_SSL_KEYFILE_PATH = pathlib.Path.cwd().joinpath("privkey.pem")
-DEFAULT_SUBPROTOCOL = "ocpp1.6"
+DEFAULT_SUBPROTOCOLS = ["ocpp1.6", "ocpp2.0.1"]
+OCPP_2_0 = "ocpp2.0"
 DEFAULT_METER_INTERVAL = 60
 DEFAULT_IDLE_INTERVAL = 900
 DEFAULT_WEBSOCKET_CLOSE_TIMEOUT = 10
@@ -94,6 +99,7 @@ MEASURANDS = [
 ]
 DEFAULT_MEASURAND = Measurand.energy_active_import_register.value
 DEFAULT_MONITORED_VARIABLES = ",".join(MEASURANDS)
+DEFAULT_MONITORED_VARIABLES_AUTOCONFIG = True
 DEFAULT_ENERGY_UNIT = UnitOfMeasure.wh.value
 DEFAULT_POWER_UNIT = UnitOfMeasure.w.value
 HA_ENERGY_UNIT = UnitOfMeasure.kwh.value
@@ -109,7 +115,7 @@ UNITS_OCCP_TO_HA = {
     UnitOfMeasure.kw: ha.UnitOfPower.KILO_WATT,
     UnitOfMeasure.va: ha.UnitOfApparentPower.VOLT_AMPERE,
     UnitOfMeasure.kva: UnitOfMeasure.kva,
-    UnitOfMeasure.var: UnitOfMeasure.var,
+    UnitOfMeasure.var: ha.UnitOfReactivePower.VOLT_AMPERE_REACTIVE,
     UnitOfMeasure.kvar: UnitOfMeasure.kvar,
     UnitOfMeasure.a: ha.UnitOfElectricCurrent.AMPERE,
     UnitOfMeasure.v: ha.UnitOfElectricPotential.VOLT,
@@ -126,5 +132,46 @@ DEFAULT_CLASS_UNITS_HA = {
     SensorDeviceClass.FREQUENCY: ha.UnitOfFrequency.HERTZ,
     SensorDeviceClass.BATTERY: ha.PERCENTAGE,
     SensorDeviceClass.POWER: ha.UnitOfPower.KILO_WATT,
+    SensorDeviceClass.REACTIVE_POWER: ha.UnitOfReactivePower.VOLT_AMPERE_REACTIVE,
     SensorDeviceClass.ENERGY: ha.UnitOfEnergy.KILO_WATT_HOUR,
+    SensorDeviceClass.TEMPERATURE: ha.UnitOfTemperature.CELSIUS,
 }
+
+
+@dataclass
+class ChargerSystemSettings:
+    """CentralSystem configuration passed to a ChargePoint."""
+
+    cpid: str
+    max_current: int
+    idle_interval: int
+    meter_interval: int
+    monitored_variables: str
+    monitored_variables_autoconfig: bool
+    skip_schema_validation: bool
+    force_smart_charging: bool
+    connection: int | None = None  # number of this connection in central server
+
+
+@dataclass
+class CentralSystemSettings:
+    """CentralSystem configuration values."""
+
+    csid: str
+    host: str
+    port: str
+    ssl: bool
+    ssl_certfile_path: str
+    ssl_keyfile_path: str
+    websocket_close_timeout: int
+    websocket_ping_interval: int
+    websocket_ping_timeout: int
+    websocket_ping_tries: int
+    cpids: list = field(default_factory=list)  # holds cpid config flow settings
+    subprotocols: list = field(default_factory=lambda: DEFAULT_SUBPROTOCOLS)
+
+    # def __post_init__(self):
+    #     i = 0
+    #     for id in self.cpids:
+    #        self.cpids[i] = ChargerSystemSettings(**id)
+    #        i =+ 1
