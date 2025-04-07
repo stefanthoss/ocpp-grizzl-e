@@ -178,8 +178,6 @@ class CentralSystem:
             self.on_connect,
             self.settings.host,
             self.settings.port,
-            select_subprotocol=self.select_subprotocol,
-            subprotocols=self.subprotocols,
             ping_interval=None,  # ping interval is not used here, because we send pings mamually in ChargePoint.monitor_connection()
             ping_timeout=None,
             close_timeout=self.settings.websocket_close_timeout,
